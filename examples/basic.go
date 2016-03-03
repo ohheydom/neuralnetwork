@@ -6,8 +6,7 @@ import (
 )
 
 func main() {
-	x := []float64{4, 5, 6, 7}
-	w := []float64{1, 2, 1, 2, 2}
-	v := neuralnetwork.NetInput(x, w)
-	fmt.Println(neuralnetwork.Activate(v))
+	// This will create a Neural Network with properly indexes biases and weights set to 0
+	n := neuralnetwork.NewNetwork([]int{4, 6, 1})
+	fmt.Println(n)
 }
