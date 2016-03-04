@@ -39,6 +39,8 @@ fmt.Printf("1 and 0 returns %.0f\n", n.FeedForward(y)[0])
 fmt.Printf("0 and 1 returns %.0f\n", n.FeedForward(z)[0])
 ```
 
+Please see other examples in the examples folder.
+
 ## Todo
 
 Implement back propagation to calculate weights and biases.

@@ -43,3 +43,19 @@ func TestFeedForwardXOR(t *testing.T) {
 		}
 	}
 }
+
+func TestRandomShuffle(t *testing.T) {
+	x := [][]float64{[]float64{1}, []float64{2}, []float64{3}, []float64{4}, []float64{5}, []float64{6}}
+	y := []float64{1, 2, 3, 4, 5, 6}
+	xNew, _ := randomShuffle(x, y, 1)
+	if xNew[0][0] == x[0][0] {
+		t.Errorf("Expected the slice to be shuffled, but instead it was not.")
+	}
+}
+
+func TestSGD(t *testing.T) {
+	x := [][]float64{[]float64{1}, []float64{2}, []float64{3}, []float64{4}, []float64{5}, []float64{6}, []float64{8}}
+	y := []float64{1, 2, 3, 4, 5, 6, 8}
+	n := NewNetwork([]int{2, 2, 1})
+	n.SGD(x, y, 7, 1, 0.3)
+}
