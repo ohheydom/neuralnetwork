@@ -24,15 +24,7 @@ func NewNetwork(sizes []int) *Network {
 	nSize := len(sizes)
 	network.Sizes = sizes
 	network.NLayers = nSize
-	network.Weights = make([][][]float64, nSize-1)
-	network.Biases = make([][]float64, nSize-1)
-	for j := 0; j < nSize-1; j++ {
-		network.Biases[j] = make([]float64, sizes[j+1])
-		network.Weights[j] = make([][]float64, sizes[j+1])
-		for k := 0; k < sizes[j+1]; k++ {
-			network.Weights[j][k] = make([]float64, sizes[j])
-		}
-	}
+	network.Weights, network.Biases = buildWeightsAndBiases(nSize, sizes)
 	return network
 }
 
@@ -83,10 +75,53 @@ func (network *Network) SGD(x [][]float64, y []float64, miniBatchSize int, nIter
 }
 
 func (network *Network) updateWeights(x [][]float64, y []float64, eta float64) {
+	newWeights, newBiases := buildWeightsAndBiases(network.NLayers, network.Sizes)
+	for i := 0; i < len(x); i++ {
+		weightChange, biasChange := network.backPropagation(x[i], y[i])
+		for j := 0; j < network.NLayers-1; j++ {
+			for bc := 0; bc < len(newBiases[j]); bc++ {
+				newBiases[j][bc] += biasChange[j][bc]
+			}
+			for k := 0; k < network.Sizes[j+1]; k++ {
+				for bw := 0; bw < len(newWeights[j][k]); bw++ {
+					newWeights[j][k][bw] += weightChange[j][k][bw]
+				}
+			}
+		}
+	}
+	for i := 0; i < len(x); i++ {
+		for j := 0; j < network.NLayers-1; j++ {
+			for bc := 0; bc < len(newBiases[j]); bc++ {
+				network.Biases[j][bc] -= (eta / float64(len(x))) * newBiases[j][bc]
+			}
+			for k := 0; k < network.Sizes[j+1]; k++ {
+				for bw := 0; bw < len(newWeights[j][k]); bw++ {
+					network.Weights[j][k][bw] -= (eta / float64(len(x))) * newWeights[j][k][bw]
+				}
+			}
+		}
+	}
+}
 
+func (network *Network) backPropagation(x []float64, y float64) ([][][]float64, [][]float64) {
+	newWeights, newBiases := buildWeightsAndBiases(network.NLayers, network.Sizes)
+	return newWeights, newBiases
 }
 
 // Helper Functions
+
+func buildWeightsAndBiases(nLayers int, sizes []int) ([][][]float64, [][]float64) {
+	weights := make([][][]float64, nLayers-1)
+	biases := make([][]float64, nLayers-1)
+	for j := 0; j < nLayers-1; j++ {
+		biases[j] = make([]float64, sizes[j+1])
+		weights[j] = make([][]float64, sizes[j+1])
+		for k := 0; k < sizes[j+1]; k++ {
+			weights[j][k] = make([]float64, sizes[j])
+		}
+	}
+	return weights, biases
+}
 
 func createBatchMarkers(n, miniBatchSize int) []int {
 	bSize := n / miniBatchSize
