@@ -14,7 +14,7 @@ func TestnetInput(t *testing.T) {
 	}
 }
 
-func Testactivate(t *testing.T) {
+func TestActivate(t *testing.T) {
 	v := 0.0
 	activatedValue := activate(v)
 	if activatedValue != 0.5 {
@@ -53,9 +53,19 @@ func TestRandomShuffle(t *testing.T) {
 	}
 }
 
-func TestSGD(t *testing.T) {
-	x := [][]float64{[]float64{1}, []float64{2}, []float64{3}, []float64{4}, []float64{5}, []float64{6}, []float64{8}}
-	y := []float64{1, 2, 3, 4, 5, 6, 8}
-	n := NewNetwork([]int{2, 2, 1})
-	n.SGD(x, y, 7, 1, 0.3)
+func TestTranspose(t *testing.T) {
+	x := [][]float64{[]float64{1, 2, 3, 4}, []float64{4, 3, 2, 1}}
+	actual := transpose(x)
+	if len(actual) != 4 && actual[3][1] != 2 {
+		t.Errorf("Should have received a transposed array of length 4, instead received %v", actual)
+	}
+}
+
+func TestMultiplyFloatMultiSlices(t *testing.T) {
+	a := [][]float64{[]float64{2, 4, 6, 8}, []float64{3, 6, 9, 12}}
+	b := []float64{1, 2, 3, 4}
+	actual := multiplyFloatMultiSlices(a, b)
+	if actual[0] != 60 || actual[1] != 90 {
+		t.Errorf("Should have received a slice with values 60 and 90, instead received %v", actual)
+	}
 }

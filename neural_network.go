@@ -28,34 +28,18 @@ func NewNetwork(sizes []int) *Network {
 	return network
 }
 
-func activate(v float64) float64 {
-	return sigmoid(v)
-}
-
-func netInput(x []float64, w []float64, b float64) float64 {
-	n := len(x)
-	var total float64
-	for i := 0; i < n; i++ {
-		total += x[i] * w[i]
-	}
-	return total + b
-}
-
 // FeedForward uses the given weights and biases to calculate the function of a
 func (network *Network) FeedForward(a []float64) []float64 {
-	totA := a
-	n := network.NLayers - 1
-	for i := 0; i < n; i++ {
-		newA := make([]float64, network.Sizes[i+1])
+	activation := a
+	for i, n := 0, network.NLayers-1; i < n; i++ {
+		tempA := make([]float64, network.Sizes[i+1])
 		for j := 0; j < network.Sizes[i+1]; j++ {
-			newA[j] += netInput(totA, network.Weights[i][j], network.Biases[i][j])
+			v := netInput(activation, network.Weights[i][j], network.Biases[i][j])
+			tempA[j] = activate(v)
 		}
-		for bb := 0; bb < len(newA); bb++ {
-			newA[bb] = activate(newA[bb])
-		}
-		totA = newA
+		activation = tempA
 	}
-	return totA
+	return activation
 }
 
 // SGD (Stochastic Gradient Descent) updates the weights and biases of a model given training data (x) and labels (y)
@@ -77,7 +61,7 @@ func (network *Network) SGD(x [][]float64, y []float64, miniBatchSize int, nIter
 func (network *Network) updateWeights(x [][]float64, y []float64, eta float64) {
 	newWeights, newBiases := buildWeightsAndBiases(network.NLayers, network.Sizes)
 	for i := 0; i < len(x); i++ {
-		weightChange, biasChange := network.backPropagation(x[i], y[i])
+		weightChange, biasChange := network.BackPropagation(x[i], y[i])
 		for j := 0; j < network.NLayers-1; j++ {
 			for bc := 0; bc < len(newBiases[j]); bc++ {
 				newBiases[j][bc] += biasChange[j][bc]
@@ -103,12 +87,105 @@ func (network *Network) updateWeights(x [][]float64, y []float64, eta float64) {
 	}
 }
 
-func (network *Network) backPropagation(x []float64, y float64) ([][][]float64, [][]float64) {
-	newWeights, newBiases := buildWeightsAndBiases(network.NLayers, network.Sizes)
-	return newWeights, newBiases
+func (network *Network) BackPropagation(x []float64, y float64) ([][][]float64, [][]float64) {
+	//newWeights, newBiases := buildWeightsAndBiases(network.NLayers, network.Sizes)
+	//activations, netInputs := [][]float64{x}, [][]float64{} // netInputs are the z values, activations are the sigmoided z values
+	//sigmoidPrime := [][]float64{}
+	//activation := x
+	//for i := 0; i < network.NLayers-1; i++ {
+	//	layerActivations := make([]float64, network.Sizes[i+1])
+	//	layerInputs := make([]float64, network.Sizes[i+1])
+	//	layerSigmoidPrime := make([]float64, network.Sizes[i+1])
+	//	for j := 0; j < network.Sizes[i+1]; j++ {
+	//		v := netInput(activation, network.Weights[i][j], network.Biases[i][j])
+	//		layerActivations[j] = activate(v)
+	//		layerInputs[j] = v
+	//		layerSigmoidPrime[j] = sigmoidDerivative(v)
+	//	}
+	//	activation = layerActivations
+	//	activations = append(activations, activation)
+	//	netInputs = append(netInputs, layerInputs)
+	//	sigmoidPrime = append(sigmoidPrime, layerSigmoidPrime)
+	//}
+	//cost := costDerivative(activations[len(activations)-1], y)
+	//errorLastLayer := hadamardVector(cost, sigmoidPrime[len(sigmoidPrime)-1])
+	//newBiases[len(newBiases)-1] = errorLastLayer
+	//newWeights[len(newWeights)-1] = [][]float64{hadamardVector(errorLastLayer, activations[len(activations)-1])}
+	//for k := network.NLayers - 2; k > 0; k-- {
+	//	weightVector := network.Weights[k-1]
+	//	errorLastLayer = hadamardVector(multiplyFloatMultiSlices(transpose(weightVector), errorLastLayer), sigmoidPrime[k-1])
+	//	newBiases[k-1] = errorLastLayer
+	//	newWeights[k-1] = [][]float64{hadamardVector(errorLastLayer, activations[k-1])} // CREATE DOT MULTIPLIER
+	//}
+	return nil, nil //newWeights, newBiases
 }
 
 // Helper Functions
+
+func multiplyFloatMultiSlices(a [][]float64, b []float64) []float64 {
+	n := len(a)
+	newS := make([]float64, n)
+	if len(b) == 1 {
+		for i := 0; i < n; i++ {
+			var total float64
+			for j := 0; j < len(a[i]); j++ {
+				total += a[i][j] * b[0]
+			}
+			newS[i] = total
+		}
+		return newS
+	}
+	for i := 0; i < n; i++ {
+		var total float64
+		for j := 0; j < len(a[i]); j++ {
+			total += a[i][j] * b[j]
+		}
+		newS[i] = total
+	}
+	return newS
+}
+
+func hadamardVector(a, b []float64) []float64 {
+	n := len(a)
+	newS := make([]float64, n)
+	for i, n := 0, len(a); i < n; i++ {
+		newS[i] = a[i] * b[i]
+	}
+	return newS
+}
+
+func dotVector(delta, activations []float64) (total float64) {
+	for i := 0; i < len(delta); i++ {
+		total += delta[i] * activations[i]
+	}
+	return
+}
+
+func activate(v float64) float64 {
+	return sigmoid(v)
+}
+
+func netInput(x []float64, w []float64, b float64) float64 {
+	var total float64
+	for i, n := 0, len(x); i < n; i++ {
+		total += x[i] * w[i]
+	}
+	return total + b
+}
+
+func transpose(a [][]float64) [][]float64 {
+	n := len(a[0])
+	nn := len(a)
+	transposedS := make([][]float64, n)
+	for i := 0; i < n; i++ {
+		tempS := make([]float64, nn)
+		for j := 0; j < nn; j++ {
+			tempS[j] = a[j][i]
+		}
+		transposedS[i] = tempS
+	}
+	return transposedS
+}
 
 func buildWeightsAndBiases(nLayers int, sizes []int) ([][][]float64, [][]float64) {
 	weights := make([][][]float64, nLayers-1)
@@ -154,4 +231,12 @@ func sigmoid(v float64) float64 {
 
 func sigmoidDerivative(v float64) float64 {
 	return sigmoid(v) * (1 - sigmoid(v))
+}
+
+func costDerivative(activations []float64, y float64) []float64 {
+	errors := make([]float64, len(activations))
+	for i := 0; i < len(activations); i++ {
+		errors[i] = activations[i] - y
+	}
+	return errors
 }
