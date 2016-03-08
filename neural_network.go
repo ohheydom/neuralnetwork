@@ -4,6 +4,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"time"
 )
 
 // Network is a struct containing a Neural Network's:
@@ -24,7 +25,7 @@ func NewNetwork(sizes []int) *Network {
 	nSize := len(sizes)
 	network.Sizes = sizes
 	network.NLayers = nSize
-	network.Weights, network.Biases = buildWeightsAndBiases(nSize, sizes)
+	network.Weights, network.Biases = initializeWeightsAndBiases(nSize, sizes)
 	return network
 }
 
@@ -59,7 +60,7 @@ func (network *Network) SGD(x [][]float64, y []float64, miniBatchSize int, nIter
 }
 
 func (network *Network) updateWeights(x [][]float64, y []float64, eta float64) {
-	newWeights, newBiases := buildWeightsAndBiases(network.NLayers, network.Sizes)
+	newWeights, newBiases := initializeWeightsAndBiases(network.NLayers, network.Sizes)
 	for i := 0; i < len(x); i++ {
 		weightChange, biasChange := network.BackPropagation(x[i], y[i])
 		for j := 0; j < network.NLayers-1; j++ {
@@ -88,7 +89,7 @@ func (network *Network) updateWeights(x [][]float64, y []float64, eta float64) {
 }
 
 func (network *Network) BackPropagation(x []float64, y float64) ([][][]float64, [][]float64) {
-	//newWeights, newBiases := buildWeightsAndBiases(network.NLayers, network.Sizes)
+	//newWeights, newBiases := initializeWeightsAndBiases(network.NLayers, network.Sizes)
 	//activations, netInputs := [][]float64{x}, [][]float64{} // netInputs are the z values, activations are the sigmoided z values
 	//sigmoidPrime := [][]float64{}
 	//activation := x
@@ -187,14 +188,22 @@ func transpose(a [][]float64) [][]float64 {
 	return transposedS
 }
 
-func buildWeightsAndBiases(nLayers int, sizes []int) ([][][]float64, [][]float64) {
+func initializeWeightsAndBiases(nLayers int, sizes []int) ([][][]float64, [][]float64) {
+	rand.Seed(time.Now().Unix())
+	sqrtInputs := math.Sqrt(float64(sizes[0]))
 	weights := make([][][]float64, nLayers-1)
 	biases := make([][]float64, nLayers-1)
 	for j := 0; j < nLayers-1; j++ {
 		biases[j] = make([]float64, sizes[j+1])
+		for j1 := 0; j1 < len(biases[j]); j1++ {
+			biases[j][j1] = rand.NormFloat64() / sqrtInputs
+		}
 		weights[j] = make([][]float64, sizes[j+1])
 		for k := 0; k < sizes[j+1]; k++ {
 			weights[j][k] = make([]float64, sizes[j])
+			for k1 := 0; k1 < len(weights[j][k]); k1++ {
+				weights[j][k][k1] = rand.NormFloat64() / sqrtInputs
+			}
 		}
 	}
 	return weights, biases
@@ -227,6 +236,13 @@ func randomShuffle(x [][]float64, y []float64, seed int64) ([][]float64, []float
 
 func sigmoid(v float64) float64 {
 	return 1 / (1 + math.Exp(-v))
+}
+
+func relu(v float64) float64 {
+	if v <= 0 {
+		return 0
+	}
+	return v
 }
 
 func sigmoidDerivative(v float64) float64 {
