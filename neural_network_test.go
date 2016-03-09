@@ -39,7 +39,7 @@ func TestFeedForwardXOR(t *testing.T) {
 	for _, v := range xors {
 		actual := int(n.FeedForward(v.input)[0] + 0.5) // Rounds down
 		if actual != v.output {
-			t.Errorf("Expect %v, received %v", v.output, actual)
+			t.Errorf("Expected %v, received %v", v.output, actual)
 		}
 	}
 }
@@ -61,9 +61,27 @@ func TestTranspose(t *testing.T) {
 	}
 }
 
-func TestBackPropagation(t *testing.T) {
+func TestSGD(t *testing.T) {
 	n := NewNetwork([]int{2, 2, 1})
-	x := [][]float64{[]float64{1, 1}, []float64{2, 2}, []float64{3, 3}, []float64{-1, -1}, []float64{-2, -2}, []float64{-3, -3}, []float64{-4, -4}, []float64{4, 4}}
-	y := []float64{1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
-	n.SGD(x, y, 2, 3000, 0.005)
+	xTrain := [][]float64{[]float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}, []float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}, []float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}}
+
+	yTrain := []float64{0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0}
+	n.SGD(xTrain, yTrain, 2, 10000, 0.24)
+
+	var xors = []struct {
+		input  []float64
+		output int
+	}{
+		{[]float64{1, 1}, 0},
+		{[]float64{0, 0}, 0},
+		{[]float64{1, 0}, 1},
+		{[]float64{0, 1}, 1},
+	}
+
+	for _, v := range xors {
+		actual := int(n.FeedForward(v.input)[0] + 0.5)
+		if actual != v.output {
+			t.Errorf("Expected %v, received %v", v.output, actual)
+		}
+	}
 }
