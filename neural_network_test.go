@@ -61,11 +61,9 @@ func TestTranspose(t *testing.T) {
 	}
 }
 
-func TestMultiplyFloatMultiSlices(t *testing.T) {
-	a := [][]float64{[]float64{2, 4, 6, 8}, []float64{3, 6, 9, 12}}
-	b := []float64{1, 2, 3, 4}
-	actual := multiplyFloatMultiSlices(a, b)
-	if actual[0] != 60 || actual[1] != 90 {
-		t.Errorf("Should have received a slice with values 60 and 90, instead received %v", actual)
-	}
+func TestBackPropagation(t *testing.T) {
+	n := NewNetwork([]int{2, 2, 1})
+	x := [][]float64{[]float64{1, 1}, []float64{2, 2}, []float64{3, 3}, []float64{-1, -1}, []float64{-2, -2}, []float64{-3, -3}, []float64{-4, -4}, []float64{4, 4}}
+	y := []float64{1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
+	n.SGD(x, y, 2, 3000, 0.005)
 }
