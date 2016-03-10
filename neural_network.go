@@ -13,10 +13,12 @@ import (
 // NLayers - Number of layers including input, hidden, and output
 // Sizes - Slice of how many neurons in each layer
 type Network struct {
-	Weights [][][]float64
-	Biases  [][]float64
-	NLayers int
-	Sizes   []int
+	Weights     [][][]float64
+	Biases      [][]float64
+	NLayers     int
+	Sizes       []int
+	weightCosts [][][]float64
+	biasCosts   [][]float64
 }
 
 // NewNetwork builds a Neural Network from the given sizes of each layer
@@ -60,24 +62,16 @@ func (network *Network) SGD(x [][]float64, y []float64, miniBatchSize int, nIter
 }
 
 func (network *Network) updateWeights(x [][]float64, y []float64, eta float64) {
-	nablaW, nablaB := initializeWeightsAndBiases(network.NLayers, network.Sizes, true)
+	network.weightCosts, network.biasCosts = initializeWeightsAndBiases(network.NLayers, network.Sizes, true)
 	for i := 0; i < len(x); i++ {
-		weightChange, biasChange := network.backPropagation(x[i], y[i])
-		for j := 0; j < network.NLayers-1; j++ {
-			for k := 0; k < network.Sizes[j+1]; k++ {
-				nablaB[j][k] += biasChange[j][k]
-				for wc := 0; wc < len(weightChange[j][k]); wc++ {
-					nablaW[j][k][wc] += weightChange[j][k][wc]
-				}
-			}
-		}
+		network.backPropagation(x[i], y[i])
 	}
 	for i := 0; i < len(x); i++ {
 		for j := 0; j < network.NLayers-1; j++ {
 			for k := 0; k < network.Sizes[j+1]; k++ {
-				network.Biases[j][k] -= (eta / float64(len(x))) * nablaB[j][k]
-				for wc := 0; wc < len(nablaW[j][k]); wc++ {
-					network.Weights[j][k][wc] -= (eta / float64(len(x))) * nablaW[j][k][wc]
+				network.Biases[j][k] -= (eta / float64(len(x))) * network.biasCosts[j][k]
+				for wc := 0; wc < len(network.weightCosts[j][k]); wc++ {
+					network.Weights[j][k][wc] -= (eta / float64(len(x))) * network.weightCosts[j][k][wc]
 				}
 			}
 		}
@@ -85,8 +79,7 @@ func (network *Network) updateWeights(x [][]float64, y []float64, eta float64) {
 }
 
 // backPropagation feeds forward through the network then backpropagates and calculates all the changes in the cost function with respect to each weight and bias
-func (network *Network) backPropagation(x []float64, y float64) ([][][]float64, [][]float64) {
-	weightCosts, biasCosts := initializeWeightsAndBiases(network.NLayers, network.Sizes, true)
+func (network *Network) backPropagation(x []float64, y float64) {
 	activations := [][]float64{x}
 	sigmoidPrimes := [][]float64{}
 	activation := x
@@ -108,24 +101,22 @@ func (network *Network) backPropagation(x []float64, y float64) ([][][]float64, 
 	}
 	cost := costDerivative(activations[len(activations)-1], y)
 	nLast := len(sigmoidPrimes) - 1
-	errorLastLayer := hadamardVector(cost, sigmoidPrimes[nLast])
-	biasCosts[nLast] = errorLastLayer
-	weightCosts[nLast] = multiplyVectors(activations[len(activations)-2], errorLastLayer)
+	errorLastLayer := network.hadamardVector(nLast, cost, sigmoidPrimes[nLast])
+	network.multiplyVectors(nLast, activations[len(activations)-2], errorLastLayer)
 	for i := 2; i < network.NLayers; i++ {
-		n := len(biasCosts) - i
+		n := len(network.biasCosts) - i
 		nodeErrors := []float64{}
 		for j := 0; j < len(sigmoidPrimes[n]); j++ {
 			var nodeError float64
 			for k := 0; k < len(errorLastLayer); k++ {
-				nodeError += network.Weights[n+1][k][j] * errorLastLayer[k]
+				nodeError += network.Weights[n+1][k][j] * errorLastLayer[k] * sigmoidPrimes[n][j]
+				network.biasCosts[j][k] += nodeError
 			}
-			nodeErrors = append(nodeErrors, nodeError*sigmoidPrimes[n][j])
+			nodeErrors = append(nodeErrors, nodeError)
 		}
 		errorLastLayer = nodeErrors
-		biasCosts[n] = errorLastLayer
-		weightCosts[n] = multiplyVectors(activations[len(activations)-i-1], errorLastLayer)
+		network.multiplyVectors(n, activations[len(activations)-i-1], errorLastLayer)
 	}
-	return weightCosts, biasCosts
 }
 
 // Helper Functions
@@ -138,24 +129,27 @@ func activatePrime(v float64) float64 {
 	return sigmoidPrime(v)
 }
 
-func multiplyVectors(a, b []float64) [][]float64 {
+// multiplyVectors calculates a straight multiplication of vectors and adds values to the weight costs
+func (network *Network) multiplyVectors(idx int, a, b []float64) {
 	lenA, lenB := len(a), len(b)
 	newF := make([][]float64, lenB)
 	for i := 0; i < lenB; i++ {
 		newNodeM := make([]float64, lenA)
 		for j := 0; j < lenA; j++ {
 			newNodeM[j] = a[j] * b[i]
+			network.weightCosts[idx][i][j] += a[j] * b[i]
 		}
 		newF[i] = newNodeM
 	}
-	return newF
 }
 
-func hadamardVector(a, b []float64) []float64 {
+// hadamardVector calculates the hadamard product and adds value to the bias costs
+func (network *Network) hadamardVector(idx int, a, b []float64) []float64 {
 	n := len(a)
 	newS := make([]float64, n)
 	for i, n := 0, len(a); i < n; i++ {
 		newS[i] = a[i] * b[i]
+		network.biasCosts[idx][i] += a[i] * b[i]
 	}
 	return newS
 }

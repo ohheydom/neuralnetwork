@@ -66,7 +66,7 @@ func TestSGD(t *testing.T) {
 	xTrain := [][]float64{[]float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}, []float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}, []float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}}
 
 	yTrain := []float64{0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0}
-	n.SGD(xTrain, yTrain, 2, 50000, 0.14)
+	n.SGD(xTrain, yTrain, 4, 10000, 0.14)
 
 	var xors = []struct {
 		input  []float64
