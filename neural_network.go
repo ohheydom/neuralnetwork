@@ -86,7 +86,7 @@ func (network *Network) updateWeights(x [][]float64, y []float64, eta float64) {
 
 // backPropagation feeds forward through the network then backpropagates and calculates all the changes in the cost function with respect to each weight and bias
 func (network *Network) backPropagation(x []float64, y float64) ([][][]float64, [][]float64) {
-	newWeights, newBiases := initializeWeightsAndBiases(network.NLayers, network.Sizes, true)
+	weightCosts, biasCosts := initializeWeightsAndBiases(network.NLayers, network.Sizes, true)
 	activations := [][]float64{x}
 	sigmoidPrimes := [][]float64{}
 	activation := x
@@ -96,12 +96,11 @@ func (network *Network) backPropagation(x []float64, y float64) ([][][]float64, 
 		for j := 0; j < network.Sizes[i+1]; j++ {
 			var overallZ float64
 			for k := 0; k < len(activation); k++ {
-				zVal := activation[k]*network.Weights[i][j][k] + network.Biases[i][j]
-				overallZ += zVal
+				overallZ += activation[k] * network.Weights[i][j][k]
 			}
-			activatedNode := activate(overallZ)
-			newSigmoidPrimeLayer = append(newSigmoidPrimeLayer, sigmoidDerivative(overallZ))
-			newAcLayer = append(newAcLayer, activatedNode)
+			preAc := overallZ + network.Biases[i][j]
+			newSigmoidPrimeLayer = append(newSigmoidPrimeLayer, activatePrime(preAc))
+			newAcLayer = append(newAcLayer, activate(preAc))
 		}
 		activation = newAcLayer
 		activations = append(activations, activation)
@@ -110,26 +109,34 @@ func (network *Network) backPropagation(x []float64, y float64) ([][][]float64, 
 	cost := costDerivative(activations[len(activations)-1], y)
 	nLast := len(sigmoidPrimes) - 1
 	errorLastLayer := hadamardVector(cost, sigmoidPrimes[nLast])
-	newBiases[nLast] = errorLastLayer
-	newWeights[nLast] = multiplyVectors(activations[len(activations)-2], errorLastLayer)
-	for k := 2; k < network.NLayers; k++ {
-		n := len(newBiases) - k
+	biasCosts[nLast] = errorLastLayer
+	weightCosts[nLast] = multiplyVectors(activations[len(activations)-2], errorLastLayer)
+	for i := 2; i < network.NLayers; i++ {
+		n := len(biasCosts) - i
 		nodeErrors := []float64{}
-		for l := 0; l < len(sigmoidPrimes[n]); l++ {
+		for j := 0; j < len(sigmoidPrimes[n]); j++ {
 			var nodeError float64
-			for m := 0; m < len(errorLastLayer); m++ {
-				nodeError += network.Weights[n+1][m][l] * errorLastLayer[m]
+			for k := 0; k < len(errorLastLayer); k++ {
+				nodeError += network.Weights[n+1][k][j] * errorLastLayer[k]
 			}
-			nodeErrors = append(nodeErrors, nodeError*sigmoidPrimes[n][l])
+			nodeErrors = append(nodeErrors, nodeError*sigmoidPrimes[n][j])
 		}
 		errorLastLayer = nodeErrors
-		newBiases[n] = errorLastLayer
-		newWeights[n] = multiplyVectors(activations[len(activations)-k-1], errorLastLayer)
+		biasCosts[n] = errorLastLayer
+		weightCosts[n] = multiplyVectors(activations[len(activations)-i-1], errorLastLayer)
 	}
-	return newWeights, newBiases
+	return weightCosts, biasCosts
 }
 
 // Helper Functions
+
+func activate(v float64) float64 {
+	return sigmoid(v)
+}
+
+func activatePrime(v float64) float64 {
+	return sigmoidPrime(v)
+}
 
 func multiplyVectors(a, b []float64) [][]float64 {
 	lenA, lenB := len(a), len(b)
@@ -151,10 +158,6 @@ func hadamardVector(a, b []float64) []float64 {
 		newS[i] = a[i] * b[i]
 	}
 	return newS
-}
-
-func activate(v float64) float64 {
-	return sigmoid(v)
 }
 
 func netInput(x []float64, w []float64, b float64) float64 {
@@ -180,18 +183,18 @@ func transpose(a [][]float64) [][]float64 {
 }
 
 func initializeWeightsAndBiases(nLayers int, sizes []int, zeroValued bool) ([][][]float64, [][]float64) {
-	rand.Seed(1) //time.Now().Unix())
+	rand.Seed(2) //time.Now().Unix())
 	sqrtInputs := math.Sqrt(float64(sizes[0]))
 	weights := make([][][]float64, nLayers-1)
 	biases := make([][]float64, nLayers-1)
-	for j := 0; j < nLayers-1; j++ {
-		biases[j] = make([]float64, sizes[j+1])
-		weights[j] = make([][]float64, sizes[j+1])
-		for k := 0; k < sizes[j+1]; k++ {
-			weights[j][k] = make([]float64, sizes[j])
+	for i := 0; i < nLayers-1; i++ {
+		biases[i] = make([]float64, sizes[i+1])
+		weights[i] = make([][]float64, sizes[i+1])
+		for j := 0; j < sizes[i+1]; j++ {
+			weights[i][j] = make([]float64, sizes[i])
 			if zeroValued != true {
-				for l := 0; l < len(weights[j][k]); l++ {
-					weights[j][k][l] = rand.NormFloat64() / sqrtInputs
+				for k := 0; k < len(weights[i][j]); k++ {
+					weights[i][j][k] = rand.NormFloat64() / sqrtInputs
 				}
 			}
 		}
@@ -206,8 +209,8 @@ func createBatchMarkers(n, miniBatchSize int) []int {
 	}
 	batches := make([]int, bSize)
 	batches = append(batches, n)
-	for idx, j := 0, 0; j < n; idx, j = idx+1, j+miniBatchSize {
-		batches[idx] = j
+	for idx, i := 0, 0; i < n; idx, i = idx+1, i+miniBatchSize {
+		batches[idx] = i
 	}
 	return batches
 }
@@ -228,6 +231,10 @@ func sigmoid(v float64) float64 {
 	return 1 / (1 + math.Exp(-v))
 }
 
+func sigmoidPrime(v float64) float64 {
+	return sigmoid(v) * (1 - sigmoid(v))
+}
+
 func reLU(v float64) float64 {
 	if v <= 0 {
 		return 0
@@ -235,8 +242,11 @@ func reLU(v float64) float64 {
 	return v
 }
 
-func sigmoidDerivative(v float64) float64 {
-	return sigmoid(v) * (1 - sigmoid(v))
+func reLUPrime(v float64) float64 {
+	if v > 0.0 {
+		return 1
+	}
+	return 0
 }
 
 func costDerivative(activations []float64, y float64) []float64 {
