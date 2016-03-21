@@ -61,6 +61,22 @@ func TestTranspose(t *testing.T) {
 	}
 }
 
+func TestNormalize(t *testing.T) {
+	Xtrain := [][]float64{[]float64{4, 6, 8}, []float64{10, 20, 30}}
+	Xnorm := [][]float64{[]float64{-1.224744871391589, 0, 1.224744871391589}, []float64{-1.224744871391589, 0, 1.224744871391589}}
+	actual := normalize(Xtrain)
+	if actual[0][2] != Xnorm[0][2] {
+		t.Errorf("Should have received %v, instead received %v", Xnorm, actual)
+	}
+}
+
+func BenchmarkNormalize(b *testing.B) {
+	Xtrain := [][]float64{[]float64{4, 6, 8}, []float64{10, 20, 30}}
+	for i := 0; i < b.N; i++ {
+		normalize(Xtrain)
+	}
+}
+
 func TestSGD(t *testing.T) {
 	n := NewNetwork([]int{2, 2, 1})
 	xTrain := [][]float64{[]float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}, []float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}, []float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}}

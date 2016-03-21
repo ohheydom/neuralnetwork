@@ -250,3 +250,28 @@ func costDerivative(activations []float64, y float64) []float64 {
 	}
 	return errors
 }
+
+// Subtract mean and divide by standard deviation
+func normalize(X [][]float64) [][]float64 {
+	n := len(X)
+	nFeatures := len(X[0])
+	stdDev := 0.0
+	for i := 0; i < n; i++ {
+		mean, squaredTotal := 0.0, 0.0
+		for j := 0; j < nFeatures; j++ {
+			mean += X[i][j]
+		}
+		nf := float64(nFeatures)
+		mean /= nf
+		for k := 0; k < nFeatures; k++ {
+			v := X[i][k] - mean
+			squaredTotal += v * v
+			X[i][k] = v
+		}
+		stdDev = math.Sqrt(squaredTotal / nf)
+		for k := 0; k < nFeatures; k++ {
+			X[i][k] /= stdDev
+		}
+	}
+	return X
+}
