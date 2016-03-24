@@ -30,7 +30,7 @@ n := neuralnetwork.NewNetwork([]int{2, 2, 1})
 // Create the training inputs and train
 xTrain := [][]float64{[]float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}}
 yTrain := []float64{0.0, 1.0, 1.0, 0.0}
-n.SGD(xTrain, yTrain, 1, 100000, 0.10)
+n.SGD(xTrain, yTrain, 1, 100000, 0.10, 1.0)
 
 // Create the test inputs
 w := []float64{1, 1}
