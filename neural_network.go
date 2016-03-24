@@ -46,7 +46,7 @@ func (network *Network) FeedForward(a []float64) []float64 {
 }
 
 // SGD (Stochastic Gradient Descent) updates the weights and biases of a model given training data (x) and labels (y)
-func (network *Network) SGD(x [][]float64, y []float64, miniBatchSize int, nIter int, eta float64) {
+func (network *Network) SGD(x [][]float64, y []float64, miniBatchSize int, nIter int, eta float64, lrDecay float64) {
 	n := len(x)
 	if miniBatchSize > n {
 		log.Fatal("miniBatchSize must be smaller than the number of samples in your training data.")
@@ -58,6 +58,7 @@ func (network *Network) SGD(x [][]float64, y []float64, miniBatchSize int, nIter
 			s, e := batches[j], batches[j+1]
 			network.updateWeights(newX[s:e], newY[s:e], eta)
 		}
+		eta *= lrDecay
 	}
 }
 
