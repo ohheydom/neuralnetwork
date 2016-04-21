@@ -33,7 +33,7 @@ func TestFeedForwardXOR(t *testing.T) {
 		{[]float64{0, 1}, 1},
 	}
 
-	n := NewNetwork([]int{2, 2, 1})
+	n := NewNetwork([]int{2, 2, 1}, 0)
 	n.Biases = [][]float64{[]float64{-10, 30}, []float64{-30}}
 	n.Weights = [][][]float64{[][]float64{[]float64{20, 20}, []float64{-20, -20}}, [][]float64{[]float64{20, 20}}}
 	for _, v := range xors {
@@ -78,11 +78,11 @@ func BenchmarkNormalize(b *testing.B) {
 }
 
 func TestSGD(t *testing.T) {
-	n := NewNetwork([]int{2, 2, 1})
+	n := NewNetwork([]int{2, 2, 1}, .0000001)
 	xTrain := [][]float64{[]float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}, []float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}, []float64{1, 1}, []float64{0, 1}, []float64{1, 0}, []float64{0, 0}}
 
 	yTrain := []float64{0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0}
-	n.SGD(xTrain, yTrain, 4, 10000, 0.5, 1)
+	n.SGD(xTrain, yTrain, 4, 10000, 0.5, .999)
 
 	var xors = []struct {
 		input  []float64

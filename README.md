@@ -21,7 +21,7 @@ import (
 
 ```golang
 // xor Neural Network
-n := neuralnetwork.NewNetwork([]int{2, 2, 1})
+n := neuralnetwork.NewNetwork([]int{2, 2, 1}, 0)
 ```
 
 #### Create samples and Run Stochastic Gradient Descent
@@ -59,7 +59,7 @@ import (
 
 ```golang
 // xor Neural Network
-n := neuralnetwork.NewNetwork([]int{2, 2, 1})
+n := neuralnetwork.NewNetwork([]int{2, 2, 1}, 0)
 n.Biases = [][]float64{[]float64{-10, 30}, []float64{-30}}
 n.Weights = [][][]float64{[][]float64{[]float64{20, 20}, []float64{-20, -20}}, [][]float64{[]float64{20, 20}}}
 ```
