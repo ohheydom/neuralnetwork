@@ -111,7 +111,7 @@ func (network *Network) backPropagation(x []float64, y float64) {
 			var nodeError float64
 			for k := 0; k < len(errorLastLayer); k++ {
 				nodeError += network.Weights[n+1][k][j] * errorLastLayer[k] * sigmoidPrimes[n][j]
-				network.biasCosts[j][k] += nodeError
+				network.biasCosts[k][j] += nodeError
 			}
 			nodeErrors = append(nodeErrors, nodeError)
 		}
